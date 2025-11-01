@@ -13,10 +13,10 @@ from requests.adapters import HTTPAdapter, Retry
 from bs4 import BeautifulSoup
 import pandas as pd
 
-# carregamos as configurações do projeto
+# carrega as configurações do projeto
 from api.config import settings
 
-# configurar logging básico conforme LOG_LEVEL
+# configuração logging básico conforme LOG_LEVEL
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def parse_book_page(session: requests.Session, book_url: str) -> dict:
     # título
     title = soup.select_one("div.product_main > h1").get_text(strip=True)
 
-    # preço (ex.: '£53.74')
+    # preço (ex.: '53.74')
     price = soup.select_one("p.price_color").get_text(strip=True)
 
     # disponibilidade

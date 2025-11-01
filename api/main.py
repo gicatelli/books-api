@@ -1,27 +1,34 @@
 # api/main.py
 """
-Aplicação FastAPI que expõe os endpoints solicitados no desafio.
-Carrega o dataset a partir do caminho definido em api.config.settings.DATA_PATH.
+FastAPI principal. Registra routers:
+- auth (login/refresh)
+- ml (features/training/predict)
+- endpoints core (books, categories, stats)
 """
 
-from fastapi import FastAPI, HTTPException, Query
 from typing import List, Optional
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query
 import logging
-
 from api.config import settings
 from api.schemas import Book, Health
 from api.utils import load_data
+from api.auth import get_current_user  # dependência para proteger rotas
+from api import auth  # importa módulo para registrar router
+from api import ml as ml_router  # importa router de ML
 
-# configurar logging conforme settings
+# registrar logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Books API", version="1.0")
+app = FastAPI(title="Books API", version="1.1")
 
-# variável global que conterá o DataFrame em memória
+# registrar routers
+app.include_router(auth.router)
+app.include_router(ml_router.router)
+
+# variável global com o dataframe
 BOOKS_DF = None
 
-# evento de startup: carrega o dataset na memória
 @app.on_event("startup")
 def startup_event():
     global BOOKS_DF
@@ -104,3 +111,16 @@ def top_rated(limit: int = 10):
         raise HTTPException(status_code=500, detail="Dados não carregados")
     df = BOOKS_DF.sort_values(by="rating", ascending=False)
     return df.head(limit).to_dict(orient="records")
+
+from scripts.scrape_books import scrape_all_books
+
+# Endpoint protegido: dispara scraping (executa em background)
+@app.post("/api/v1/scraping/trigger")
+def trigger_scraping(background_tasks: BackgroundTasks, user=Depends(get_current_user)):
+    """
+    Endpoint protegido que dispara o scraping em background.
+    Requer token Bearer válido (admin).
+    """
+    # adiciona a tarefa de scraping em background (não bloqueia a API)
+    background_tasks.add_task(scrape_all_books)
+    return {"status": "accepted", "detail": "Scraping em background iniciado"}

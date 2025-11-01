@@ -1,27 +1,34 @@
 # api/config.py
-from pydantic_settings import BaseSettings
+"""
+Carrega variáveis de ambiente da aplicação.
+Usa pydantic-settings (compatível com Pydantic v2).
+"""
 
-# Módulo que centraliza todas as configurações lidas do .env
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 class Settings(BaseSettings):
-    # caminho do dataset local (CSV)
+    # --- Caminhos e configurações gerais ---
     DATA_PATH: str = "data/books.csv"
-    # URL base para o scraper
     SCRAPER_BASE_URL: str = "https://books.toscrape.com/"
-    # nível de logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
     LOG_LEVEL: str = "INFO"
-    # ambiente da aplicação
     ENV: str = "development"
-    # porta padrão
     PORT: int = 8000
-    # variáveis opcionais para produção (ex.: banco, S3, JWT)
-    DATABASE_URL: str | None = None
-    S3_BUCKET: str | None = None
-    JWT_SECRET: str | None = None
 
-    class Config:
-        # arquivo .env
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # --- Credenciais administrativas ---
+    ADMIN_USER: str = "admin"
+    ADMIN_PASSWORD: str = "admin123"
 
-# instância global de configurações para ser importada
+    # --- JWT (Tokens) ---
+    JWT_SECRET: str = "changeme"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 1440
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore"  # <-- ignora variáveis extras no .env (importante!)
+    )
+
+# Instância global de configurações
 settings = Settings()
