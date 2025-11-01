@@ -89,7 +89,7 @@ DATA_PATH=data/books.csv
 SCRAPER_BASE_URL=https://books.toscrape.com/
 ADMIN_USER=admin
 ADMIN_PASSWORD=admin123
-JWT_SECRET=JWT_SECRET=sbkefjscleirfnliekjrfnlieakfjn
+JWT_SECRET=sbkefjscleirfnliekjrfnlieakfjn
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 REFRESH_TOKEN_EXPIRE_MINUTES=1440
 ```
