@@ -40,6 +40,11 @@ def startup_event():
         logger.error("Erro ao carregar dados: %s", str(e))
         BOOKS_DF = None
 
+# rota raiz para teste/status
+@app.get("/")
+def read_root():
+    return {"message": "API de livros está rodando!"}
+
 # endpoint de health-check
 @app.get("/api/v1/health", response_model=Health)
 def health():
