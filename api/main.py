@@ -15,6 +15,7 @@ from api.utils import load_data
 from api.auth import get_current_user  # dependência para proteger rotas
 from api import auth  # importa módulo para registrar router
 from api import ml as ml_router  # importa router de ML
+import pandas as pd
 
 # registrar logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
@@ -54,16 +55,6 @@ def list_books(skip: int = 0, limit: int = 100):
     df = BOOKS_DF.iloc[skip: skip + limit]
     return df.to_dict(orient="records")
 
-# obter livro por id
-@app.get("/api/v1/books/{book_id}", response_model=Book)
-def get_book(book_id: int):
-    if BOOKS_DF is None:
-        raise HTTPException(status_code=500, detail="Dados não carregados")
-    df = BOOKS_DF[BOOKS_DF["id"] == book_id]
-    if df.empty:
-        raise HTTPException(status_code=404, detail="Livro não encontrado")
-    return df.iloc[0].to_dict()
-
 # busca por título e/ou categoria e opção de faixa de preço
 @app.get("/api/v1/books/search", response_model=List[Book])
 def search_books(
@@ -95,15 +86,30 @@ def list_categories():
     return {"categories": sorted(cats)}
 
 # --- Endpoints opcionais de estatísticas (insights) ---
-
 @app.get("/api/v1/stats/overview")
 def stats_overview():
     if BOOKS_DF is None:
         raise HTTPException(status_code=500, detail="Dados não carregados")
-    total = int(BOOKS_DF.shape[0])
-    avg_price = float(BOOKS_DF["price_num"].dropna().mean())
-    rating_dist = BOOKS_DF["rating"].value_counts().to_dict()
-    return {"total_books": total, "avg_price": avg_price, "rating_distribution": rating_dist}
+
+    df = BOOKS_DF.copy()
+
+    # Substitui NaN, infinidades e outros valores inválidos por None
+    df = df.replace([float("inf"), float("-inf")], None)
+    df = df.where(pd.notnull(df), None)
+
+    stats = {
+        "total_books": len(df),
+        "average_price": df["price_num"].mean(),
+        "min_price": df["price_num"].min(),
+        "max_price": df["price_num"].max(),
+        "categories_count": df["category"].nunique(),
+        "average_rating": df["rating"].mean(),
+    }
+
+    # Também converter NaN em None no dicionário final
+    stats = {k: (None if pd.isna(v) else v) for k, v in stats.items()}
+
+    return stats
 
 @app.get("/api/v1/books/top-rated", response_model=List[Book])
 def top_rated(limit: int = 10):
@@ -111,6 +117,16 @@ def top_rated(limit: int = 10):
         raise HTTPException(status_code=500, detail="Dados não carregados")
     df = BOOKS_DF.sort_values(by="rating", ascending=False)
     return df.head(limit).to_dict(orient="records")
+
+# obter livro por id
+@app.get("/api/v1/books/{book_id}", response_model=Book)
+def get_book(book_id: int):
+    if BOOKS_DF is None:
+        raise HTTPException(status_code=500, detail="Dados não carregados")
+    df = BOOKS_DF[BOOKS_DF["id"] == book_id]
+    if df.empty:
+        raise HTTPException(status_code=404, detail="Livro não encontrado")
+    return df.iloc[0].to_dict()
 
 from scripts.scrape_books import scrape_all_books
 

@@ -1,23 +1,107 @@
 # 📚 Books API — FastAPI + Scraping + ML Pipeline
 
-Projeto desenvolvido como parte do **Tech Challenge - Pós Tech Machine Learning Engineering (FIAP)**.
-O objetivo é criar uma **API completa** que realiza *web scraping*, expõe os dados em endpoints RESTful, possui *autenticação JWT* e disponibiliza *endpoints preparados para Machine Learning*.
+Projeto desenvolvido como parte do **Tech Challenge — Pós Tech Machine Learning Engineering (FIAP)**.
+
+O sistema implementa **um pipeline completo de coleta, processamento e exposição de dados de livros** a partir do site *Books to Scrape*, com **autenticação JWT**, endpoints RESTful e **módulos preparados para integração com Machine Learning**.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## 🧠 Visão Geral e Arquitetura
 
-* **Python 3.11+**
-* **FastAPI** — Framework principal da API
-* **Uvicorn** — Servidor ASGI
-* **Pandas** — Manipulação e análise de dados
-* **Python-JOSE** — Geração e validação de tokens JWT
-* **Passlib** — Utilitários de autenticação (hash de senhas)
-* **Requests / BeautifulSoup4** — Scraping de dados
+### 🏗️ Descrição do Pipeline
+
+O projeto segue um fluxo estruturado de ponta a ponta:
+
+```
+[BooksToScrape.com]
+        │
+        ▼
+ (1) Web Scraper (Python + BeautifulSoup)
+        │
+        ▼
+ (2) Data Processing (Pandas → CSV)
+        │
+        ▼
+ (3) API Layer (FastAPI + JWT)
+        │
+        ▼
+ (4) ML-ready Endpoints
+        │
+        ▼
+ (5) Consumers (Dashboards, Cientistas de Dados, Modelos ML)
+```
+
+Cada camada é modular, permitindo **manutenção e escalabilidade** independentes:
+
+* **Ingestão:** coleta os dados brutos diretamente do site.
+* **Processamento:** normaliza e salva em `data/books.csv`.
+* **API:** fornece endpoints públicos e protegidos com JWT.
+* **ML Layer:** expõe dados pré-processados e simula predições.
+* **Consumo:** cientistas de dados e sistemas externos podem consumir dados e modelos.
 
 ---
 
-## 📂 Estrutura do Projeto
+## ☁️ Arquitetura para Escalabilidade Futura
+
+A arquitetura foi projetada para suportar expansão e integração com novas camadas:
+
+```
+┌─────────────────────────────┐
+│        Frontend UI          │
+│   (Dashboards ou Streamlit) │
+└───────────────┬─────────────┘
+                │
+┌───────────────┴────────────────┐
+│          FastAPI Layer         │
+│  - /books, /ml, /auth, /stats  │
+│  - Autenticação JWT            │
+└───────────────┬────────────────┘
+                │
+┌───────────────┴────────────────┐
+│       Data Processing Layer    │
+│  - Pandas                      │
+│  - Limpeza, Feature Engineering│
+└───────────────┬────────────────┘
+                │
+┌───────────────┴────────────────┐
+│        Data Storage (S3/DB)    │
+│  - CSV → Banco SQL futuro      │
+└───────────────┬────────────────┘
+                │
+┌───────────────┴────────────────┐
+│     Machine Learning Layer     │
+│  - Modelos scikit-learn/PyTorch│
+│  - Endpoint `/ml/predictions`  │
+└────────────────────────────────┘
+```
+
+> **Futuro:** o `books.csv` será substituído por um banco de dados SQL, e os modelos de Machine Learning serão servidos via FastAPI (endpoint `/predict` real).
+
+---
+
+## 🔬 Cenário de Uso para Cientistas de Dados / ML
+
+Os cientistas de dados podem:
+
+1. **Consumir `/ml/training-data`** para obter dataset completo para treino.
+2. Realizar **feature engineering e modelagem offline**.
+3. Enviar modelos treinados para o time de engenharia, que os **deploya via `/ml/predictions`**.
+4. Monitorar métricas de desempenho via logs da API e dados históricos.
+
+---
+
+## 🤖 Plano de Integração com Modelos de ML
+
+| Etapa | Descrição                                | Resultado Esperado                           |
+| :---- | :--------------------------------------- | :------------------------------------------- |
+| 1     | Consumir dataset via `/ml/training-data` | Dados limpos e balanceados                   |
+| 2     | Treinar modelo (ex: regressão linear)    | Modelo `.pkl` salvo em `/models`             |
+| 3     | Carregar modelo no backend FastAPI       | Endpoint `/api/v1/ml/predictions` atualizado |
+| 4     | Retornar predições reais                 | Resposta JSON com preço estimado             |
+
+---
+
+## 🧩 Estrutura do Projeto
 
 ```
 BooksApi/
@@ -51,7 +135,7 @@ BooksApi/
 
 ---
 
-## ⚙️ Configuração do Ambiente
+## ⚙️ Instalação e Configuração
 
 ### 1️⃣ Clonar o repositório
 
@@ -60,103 +144,72 @@ git clone https://github.com/gicatelli/books-api.git
 cd BooksApi
 ```
 
-### 2️⃣ Criar ambiente virtual (Windows)
+### 2️⃣ Criar ambiente virtual
 
 ```bash
 python -m venv venv
-.\venv\Scripts\activate
+source venv/bin/activate  # Linux/macOS
+.\venv\Scripts\activate   # Windows
 ```
 
 ### 3️⃣ Instalar dependências
 
 ```bash
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ### 4️⃣ Configurar variáveis de ambiente
 
-Copie o arquivo de exemplo:
-
 ```bash
-Copy-Item -Path .env.example -Destination .env
+cp .env.example .env
 ```
 
-Edite o `.env` conforme necessário:
+Configure suas credenciais no `.env`:
 
 ```ini
-DATA_PATH=data/books.csv
-SCRAPER_BASE_URL=https://books.toscrape.com/
 ADMIN_USER=admin
 ADMIN_PASSWORD=admin123
-JWT_SECRET=sbkefjscleirfnliekjrfnlieakfjn
+JWT_SECRET=seu_jwt_secret_aqui
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 REFRESH_TOKEN_EXPIRE_MINUTES=1440
+DATA_PATH=data/books.csv
+SCRAPER_BASE_URL=https://books.toscrape.com/
 ```
 
 ---
 
-## 🧹 Scraping (Coleta de Dados)
-
-Para gerar ou atualizar o dataset (`data/books.csv`):
+## 🧹 Rodar o Scraper
 
 ```bash
 python -m scripts.scrape_books
 ```
 
-Os dados coletados incluem:
-
-* Título
-* Preço
-* Avaliação
-* Categoria
-* Disponibilidade
-* URL da imagem
+Isso gera ou atualiza `data/books.csv` com os livros coletados.
 
 ---
 
-## 🧩 Execução da API
-
-Inicie o servidor localmente:
+## 🚀 Executar a API
 
 ```bash
-uvicorn api.main:app --reload --port 8000
+uvicorn api.main:app --reload
 ```
 
-Acesse a documentação interativa (Swagger):
+Acesse:
 👉 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ---
 
 ## 🔑 Autenticação (JWT)
 
-Algumas rotas administrativas estão protegidas com **JWT**.
-
-### 🔹 Obter Token (Login)
-
-```
-POST /api/v1/auth/login
-```
-
-Body (form-data):
-
-```
-username=admin
-password=admin123
-```
-
-Exemplo CURL:
+### Login
 
 ```bash
-curl --location 'http://127.0.0.1:8000/api/v1/auth/login' \
---header 'Content-Type: application/json' \
---data '{
-  "username": "admin",
-  "password": "admin123"
-}'
+curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
+-H "Content-Type: application/json" \
+-d '{"username": "admin", "password": "admin123"}'
 ```
 
-Resposta:
+**Resposta:**
 
 ```json
 {
@@ -166,96 +219,44 @@ Resposta:
 }
 ```
 
-### 🔹 Renovar Token
-
-```
-POST /api/v1/auth/refresh
-```
-
-Exemplo CURL:
+### Renovar Token
 
 ```bash
-curl --location 'http://127.0.0.1:8000/api/v1/auth/refresh' \
---header 'Content-Type: application/json' \
---data '{"refresh_token":"<REFRESH_TOKEN>"}'
+curl -X POST "http://127.0.0.1:8000/api/v1/auth/refresh" \
+-H "Content-Type: application/json" \
+-d '{"refresh_token": "<REFRESH_TOKEN>"}'
 ```
 
-### 🔹 Usar Token em Rotas Protegidas
-
-Adicione o cabeçalho:
-
-```
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
-Exemplo:
+### Usar Token
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/scraping/trigger" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
+-H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
 ---
 
-## 🧰 Endpoints Principais
+## 📡 Documentação dos Endpoints
 
-| Método | Endpoint                      | Descrição                                           |
-| :----: | :---------------------------- | :-------------------------------------------------- |
-|   GET  | `/api/v1/health`              | Verifica se a API está saudável                     |
-|   GET  | `/api/v1/books`               | Lista todos os livros                               |
-|   GET  | `/api/v1/books/{id}`          | Detalhes de um livro específico                     |
-|   GET  | `/api/v1/books/search?title=` | Pesquisa por título                                 |
-|   GET  | `/api/v1/categories`          | Lista categorias disponíveis                        |
-|   GET  | `/api/v1/stats/overview`      | Retorna estatísticas gerais                         |
-|   GET  | `/api/v1/books/top-rated`     | Lista livros mais bem avaliados                     |
-|  POST  | `/api/v1/scraping/trigger`    | **(Protegido)** Executa novo scraping em background |
-
----
-
-## 🤖 Endpoints ML-Ready
-
-### `GET /api/v1/ml/features`
-
-Retorna features processadas para uso em modelos ML.
-
-Exemplo:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "Book Example",
-    "price_num": 15.99,
-    "rating": 4,
-    "category": "Poetry",
-    "in_stock": 1
-  }
-]
-```
+| Método | Endpoint                      | Descrição                       |
+| ------ | ----------------------------- | ------------------------------- |
+| GET    | `/api/v1/health`              | Verifica status da API          |
+| GET    | `/api/v1/books`               | Retorna todos os livros         |
+| GET    | `/api/v1/books/{id}`          | Retorna detalhes de um livro    |
+| GET    | `/api/v1/books/search?title=` | Busca por título                |
+| GET    | `/api/v1/categories`          | Lista categorias                |
+| GET    | `/api/v1/stats/overview`      | Estatísticas gerais             |
+| GET    | `/api/v1/books/top-rated`     | Top livros                      |
+| POST   | `/api/v1/scraping/trigger`    | **Protegido**: dispara scraping |
+| GET    | `/api/v1/ml/features`         | Features processadas            |
+| GET    | `/api/v1/ml/training-data`    | Dataset completo                |
+| POST   | `/api/v1/ml/predictions`      | Predição simulada (heurística)  |
 
 ---
 
-### `GET /api/v1/ml/training-data`
+## 🧠 Exemplo `/ml/predictions`
 
-Retorna o dataset completo formatado para treino de modelos.
-
-```json
-{
-  "columns": ["price_num","rating","category","in_stock"],
-  "records": [
-    {"price_num": 12.99,"rating":4,"category":"Poetry","in_stock":1},
-    {"price_num": 8.99,"rating":2,"category":"Travel","in_stock":1}
-  ]
-}
-```
-
----
-
-### `POST /api/v1/ml/predictions`
-
-Recebe features e retorna predições simuladas (heurística baseada na média de preço por categoria e nota).
-
-Request:
+### Request
 
 ```json
 [
@@ -264,7 +265,7 @@ Request:
 ]
 ```
 
-Response:
+### Response
 
 ```json
 [
@@ -275,79 +276,40 @@ Response:
 
 ---
 
-## 🔐 Endpoint Protegido: Scraping Manual
-
-Executa novamente o scraping (requisição protegida por JWT):
+## 🧱 Pipeline ML (Diagrama Conceitual)
 
 ```
-POST /api/v1/scraping/trigger
-```
-
-Cabeçalho obrigatório:
-
-```
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
-Resposta:
-
-```json
-{"status":"accepted","detail":"Scraping em background iniciado"}
+        ┌──────────────────────────────┐
+        │     BooksToScrape.com        │
+        └──────────────┬───────────────┘
+                       │
+        ┌──────────────┴───────────────┐
+        │  Scraper (BeautifulSoup4)    │
+        └──────────────┬───────────────┘
+                       │
+        ┌──────────────┴───────────────┐
+        │   Data Cleaning (Pandas)     │
+        │   → data/books.csv           │
+        └──────────────┬───────────────┘
+                       │
+        ┌──────────────┴───────────────┐
+        │   FastAPI (Books API)        │
+        │   /books, /ml, /auth         │
+        └──────────────┬───────────────┘
+                       │
+        ┌──────────────┴───────────────┐
+        │ Cientistas de Dados / ML     │
+        │  (treino e predição)         │
+        └──────────────────────────────┘
 ```
 
 ---
 
-## 🧱 Deploy (Render.com)
+## 🧾 Créditos
 
-1. Crie conta em [https://render.com](https://render.com)
-2. Conecte sua conta GitHub.
-3. Novo “Web Service” → selecione seu repositório.
-4. Configure:
+**Autores:**
+👩‍💻 Giovanna Catelli
+👨‍💻 Pedro Cordeiro Franco
 
-   * Build command: `pip install -r requirements.txt`
-   * Start command: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
-5. Deploy automático a cada push.
-
----
-
-## 🧠 Pipeline ML (resumo conceitual)
-
-```
-[SITE - BooksToScrape]
-        │
-        ▼
- [Scraper Python]
- (scripts/scrape_books.py)
-        │
-        ▼
-  [Dataset CSV local]
-        │
-        ▼
-   [FastAPI Server]
-   ├─ /books (dados brutos)
-   ├─ /ml/features (pré-processados)
-   └─ /ml/training-data (para treino)
-```
-
-Futuramente, um modelo pode ser treinado com esses dados e disponibilizado
-via `/api/v1/ml/predictions` com predições reais.
-
----
-
-## 🛡️ Segurança e Boas Práticas
-
-* Tokens JWT com expiração configurável.
-* Variáveis sensíveis isoladas no `.env`.
-* Rotas administrativas protegidas.
-* Recomenda-se HTTPS em produção.
-* Armazenar senhas com hash (bcrypt).
-* Utilizar `JWT_SECRET` forte e único.
-
----
-
-## 🧾 Créditos e Autoria
-
-Desenvolvido por **Giovanna Catelli** e **Pedro Cordeiro Franco**
-📘 Projeto acadêmico da Pós Tech FIAP - Machine Learning Engineering
-Versão: `1.1`
-Ano: `2025`
+📘 Projeto acadêmico da Pós-Tech FIAP — *Machine Learning Engineering*
+**Versão:** 1.2 (2025)
