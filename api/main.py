@@ -1,4 +1,4 @@
-#api/main.py
+# api/main.py
 """
 FastAPI principal. Registra routers:
 - auth (login/refresh)
