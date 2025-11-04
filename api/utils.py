@@ -14,12 +14,10 @@ def load_data(path: str | None = None) -> pd.DataFrame:
     if "id" not in df.columns:
         df.insert(0, "id", range(1, len(df) + 1))
     # cria coluna numérica de preço, se possível
- 
     def price_to_float(x):
         try:
             return float(str(x).replace("£", "").strip())
-        except ValueError:
+        except:
             return None
-
     df["price_num"] = df["price"].apply(price_to_float)
     return df
