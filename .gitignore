@@ -6,9 +6,6 @@ __pycache__/
 venv/
 .env
 
-# dados
-data/*.csv
-
 # editor
 .vscode/
 .idea/
