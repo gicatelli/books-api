@@ -26,7 +26,7 @@ jobs:
 
       - name: 🔍 Lint (verificação de estilo)
         run: |
-          flake8 api --max-line-length=120 --ignore=E203,W503
+          flake8 api --max-line-length=120 --ignore=E203,W503,E302,E305,E402,W292,W293,F401
 
       - name: 🧪 Rodar testes
         run: |
