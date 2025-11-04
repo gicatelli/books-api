@@ -28,6 +28,7 @@ jobs:
         run: |
           flake8 api --max-line-length=120 --ignore=E203,W503,E302,E305,E402,W292,W293,F401,E306,E722
 
-      - name: 🧪 Rodar testes
+      - name: 🧪 Run tests
         run: |
-          pytest -q --disable-warnings --maxfail=3
+          pytest -v --disable-warnings --maxfail=3
+
